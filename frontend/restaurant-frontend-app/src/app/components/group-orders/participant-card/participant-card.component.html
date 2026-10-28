@@ -16,6 +16,38 @@
     }
   </header>
 
+  @if (showBillBlock()) {
+    <div class="bill" role="group" [attr.aria-label]="'Who pays for ' + participant().name">
+      <span class="bill-label">Who pays</span>
+      @if (canChangeBill()) {
+        <div class="segmented">
+          <button
+            type="button"
+            class="segment"
+            [class.active]="billType() === 'Shared'"
+            [attr.aria-pressed]="billType() === 'Shared'"
+            [disabled]="billUpdating()"
+            (click)="setBillType('Shared')"
+          >
+            I pay
+          </button>
+          <button
+            type="button"
+            class="segment"
+            [class.active]="billType() === 'Individual'"
+            [attr.aria-pressed]="billType() === 'Individual'"
+            [disabled]="billUpdating()"
+            (click)="setBillType('Individual')"
+          >
+            Guest pays
+          </button>
+        </div>
+      } @else {
+        <span class="chip bill-chip" [class.shared]="billType() === 'Shared'">{{ billLabel() }}</span>
+      }
+    </div>
+  }
+
   @if (participant().items.length) {
     <ul class="items">
       @for (item of participant().items; track item.dish.id) {

@@ -63,7 +63,11 @@
               [participant]="person"
               [isMe]="person.id === ownerSessionId()"
               [canRemove]="!isSubmitted()"
+              [showBill]="true"
+              [canChangeBill]="!isSubmitted()"
+              [billUpdating]="billUpdatingId() === person.id"
               (removeClick)="askRemove($event)"
+              (billTypeChange)="changeBillType($event)"
             />
           </li>
         }
@@ -85,6 +89,20 @@
 
       <footer class="page-footer">
         <p class="grand-total"><span>Grand Total</span><span class="amount">{{ grandTotal() | currency }}</span></p>
+        @if (hasGuests() && consolidated().items.length) {
+          <ul class="bill-split" aria-label="Who pays">
+            <li>
+              <span>Your bill{{ billSplit().sharedGuests ? ' (you + ' + billSplit().sharedGuests + ' guest' + (billSplit().sharedGuests === 1 ? '' : 's') + ')' : '' }}</span>
+              <span>{{ billSplit().shared | currency }}</span>
+            </li>
+            @if (billSplit().individualGuests) {
+              <li>
+                <span>Guests paying for themselves ({{ billSplit().individualGuests }})</span>
+                <span>{{ billSplit().individual | currency }}</span>
+              </li>
+            }
+          </ul>
+        }
         @if (!isSubmitted()) {
           <button type="button" class="btn primary submit" [disabled]="!canSubmit()" (click)="openSubmitDialog()">
             Submit Pre-Order

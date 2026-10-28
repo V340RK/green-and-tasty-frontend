@@ -1,4 +1,4 @@
-import { Participant } from '@app/models/group-orders/participant.model';
+import { BillType, Participant } from '@app/models/group-orders/participant.model';
 import { GroupSessionsResponse } from '@app/models/group-orders/group-sessions-response.model';
 import { GroupReservationStatus, GroupStatusResponse } from '@app/models/group-orders/group-status.model';
 import { SubmittedDish } from '@app/models/group-orders/submit-group-pre-order.model';
@@ -40,13 +40,13 @@ const POTATO = dish('dish-potato-lentil', 'Roasted Sweet Potato & Lentil Salad',
 
 function initialParticipants(): Participant[] {
   return [
-    { id: DEMO_OWNER_SESSION_ID, type: 'Owner', name: 'Yevhenii', isSubmitted: true, total: 0,
+    { id: DEMO_OWNER_SESSION_ID, type: 'Owner', name: 'Yevhenii', isSubmitted: true, total: 0, billType: 'Shared',
       items: [{ dish: SPRING, quantity: 1 }, { dish: AVOCADO, quantity: 1 }] },
-    { id: 'gs-kateryna', type: 'Guest', name: 'Kateryna', isSubmitted: true, total: 0,
+    { id: 'gs-kateryna', type: 'Guest', name: 'Kateryna', isSubmitted: true, total: 0, billType: 'Shared',
       items: [{ dish: SPRING, quantity: 2 }] },
-    { id: 'gs-mariia', type: 'Guest', name: 'Mariia', isSubmitted: false, total: 0,
+    { id: 'gs-mariia', type: 'Guest', name: 'Mariia', isSubmitted: false, total: 0, billType: 'Individual',
       items: [{ dish: STRAWBERRY, quantity: 1 }, { dish: POTATO, quantity: 1 }] },
-    { id: 'gs-mariana', type: 'Guest', name: 'Mariana', isSubmitted: false, total: 0, items: [] },
+    { id: 'gs-mariana', type: 'Guest', name: 'Mariana', isSubmitted: false, total: 0, billType: 'Individual', items: [] },
   ];
 }
 
@@ -65,7 +65,13 @@ export class GroupOrdersMockStore {
 
   snapshot(): GroupSessionsResponse {
     const participants = this.participants.map((p) => structuredClone({ ...p, total: sum(p) }));
-    return { participants, total: participants.reduce((acc, p) => acc + p.total, 0) };
+    const onOwnersBill = (p: Participant) => p.type === 'Owner' || p.billType === 'Shared';
+    return {
+      participants,
+      total: participants.reduce((acc, p) => acc + p.total, 0),
+      sharedTotal: participants.filter(onOwnersBill).reduce((acc, p) => acc + p.total, 0),
+      individualTotal: participants.filter((p) => !onOwnersBill(p)).reduce((acc, p) => acc + p.total, 0),
+    };
   }
 
   groupStatus(): GroupStatusResponse {
@@ -95,6 +101,16 @@ export class GroupOrdersMockStore {
     if (!participant) throw new MockHttpError(404, `Guest session with id ${guestSessionId} not found.`);
     if (participant.type === 'Owner') throw new MockHttpError(400, 'Owner session cannot be removed.');
     this.participants = this.participants.filter((p) => p.id !== guestSessionId);
+    return this.snapshot();
+  }
+
+  /** PATCH .../sessions/{id}/bill-type — same rules as SetGuestBillTypeAsync on the backend. */
+  setBillType(guestSessionId: string, billType: BillType): GroupSessionsResponse {
+    const participant = this.participants.find((p) => p.id === guestSessionId);
+    if (!participant) throw new MockHttpError(404, `Guest session with id ${guestSessionId} not found.`);
+    if (participant.type === 'Owner') throw new MockHttpError(400, 'The owner session is always on the shared bill.');
+    if (this.status !== 'Open') throw new MockHttpError(409, 'Bill type cannot be changed after the group pre-order was submitted.');
+    participant.billType = billType;
     return this.snapshot();
   }
 }

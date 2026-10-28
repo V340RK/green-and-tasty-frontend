@@ -56,6 +56,15 @@ export const groupOrdersMockInterceptor: HttpInterceptorFn = (req, next) => {
   if (req.method === 'POST' && path.endsWith(`/group-reservations/${DEMO_GROUP_ID}/submit`)) {
     return respond(() => store.submit((req.body as { reservationId?: string } | null)?.reservationId ?? ''));
   }
+  if (req.method === 'PATCH' && path.includes(`${groupBase}/`) && path.endsWith('/bill-type')) {
+    const start = path.indexOf(groupBase) + groupBase.length + 1;
+    const guestSessionId = decodeURIComponent(path.slice(start, -'/bill-type'.length));
+    const body = req.body as { billType?: 'Individual' | 'Shared' } | null;
+    return respond(() => {
+      if (body?.billType !== 'Individual' && body?.billType !== 'Shared') throw new MockHttpError(400, 'billType is required.');
+      return store.setBillType(guestSessionId, body.billType);
+    });
+  }
   if (req.method === 'DELETE' && path.includes(`${groupBase}/`)) {
     const guestSessionId = decodeURIComponent(path.slice(path.lastIndexOf('/') + 1));
     return respond(() => store.remove(guestSessionId));

@@ -64,6 +64,65 @@
   }
 }
 
+.bill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.bill-label {
+  font-size: 14px;
+  color: color.$neutral-600;
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid color.$neutral-200;
+  border-radius: 999px;
+  padding: 2px;
+  background: color.$neutral-0;
+}
+
+.segment {
+  border: 0;
+  border-radius: 999px;
+  padding: 4px 14px;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  color: color.$neutral-600;
+  cursor: pointer;
+
+  &.active {
+    background: color.$green-600;
+    color: color.$neutral-0;
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+
+  &:focus-visible {
+    outline: 2px solid color.$green-800;
+    outline-offset: 1px;
+  }
+}
+
+.bill-chip {
+  background: color.$neutral-100;
+  color: color.$neutral-600;
+
+  &.shared {
+    background: color.$green-100;
+    color: color.$green-800;
+  }
+}
+
 .items {
   list-style: none;
   margin: 12px 0 0;

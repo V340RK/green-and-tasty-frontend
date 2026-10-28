@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnDes
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { catchError, exhaustMap, forkJoin, map, of, Subscription, timer } from 'rxjs';
-import { ParticipantCardComponent } from '@app/components/group-orders/participant-card/participant-card.component';
+import { BillTypeChange, ParticipantCardComponent } from '@app/components/group-orders/participant-card/participant-card.component';
 import { GroupSessionsResponse } from '@app/models/group-orders/group-sessions-response.model';
 import { GroupReservationStatus } from '@app/models/group-orders/group-status.model';
 import { Participant } from '@app/models/group-orders/participant.model';
@@ -17,6 +17,16 @@ import { consolidatePreOrder } from '@app/shared/helpers/consolidate-pre-order';
 export const GROUP_ORDER_SYNC_INTERVAL_MS = 15_000;
 
 type LoadState = 'loading' | 'ready' | 'not-found' | 'error';
+
+/** How the Grand Total splits between the owner's bill and guests who pay for themselves (submitted carts only). */
+export interface BillSplit {
+  /** Owner's own dishes + guests on the owner's bill. */
+  shared: number;
+  sharedGuests: number;
+  /** Guests who pay for their own dishes. */
+  individual: number;
+  individualGuests: number;
+}
 
 @Component({
   selector: 'app-group-order-page',
@@ -47,6 +57,9 @@ export class GroupOrderPageComponent implements OnInit, OnDestroy {
   readonly removeTarget = signal<Participant | null>(null);
   readonly removing = signal(false);
 
+  /** id of the guest whose bill type is being changed right now ('' when idle). */
+  readonly billUpdatingId = signal('');
+
   readonly updatedAt = signal<Date | null>(null);
   readonly refreshFailed = signal(false);
   readonly refreshing = signal(false);
@@ -62,6 +75,21 @@ export class GroupOrderPageComponent implements OnInit, OnDestroy {
   readonly guestsLabel = computed(() => {
     const max = this.invite()?.MaxGuestCount ?? 0;
     return `${this.participants().length} of ${max} guests`;
+  });
+  readonly hasGuests = computed(() => this.participants().some((person) => person.type === 'Guest'));
+  readonly billSplit = computed<BillSplit>(() => {
+    const split: BillSplit = { shared: 0, sharedGuests: 0, individual: 0, individualGuests: 0 };
+    for (const person of this.participants().filter((candidate) => candidate.isSubmitted)) {
+      const onOwnersBill = person.type === 'Owner' || person.billType === 'Shared';
+      if (onOwnersBill) {
+        split.shared += person.total;
+        if (person.type === 'Guest') split.sharedGuests += 1;
+      } else {
+        split.individual += person.total;
+        split.individualGuests += 1;
+      }
+    }
+    return split;
   });
 
   private syncSubscription: Subscription | null = null;
@@ -220,6 +248,29 @@ export class GroupOrderPageComponent implements OnInit, OnDestroy {
           this.removing.set(false);
           this.removeTarget.set(null);
         },
+      });
+  }
+
+  // ----- who pays for a guest (own feature) -----
+  changeBillType({ participant, billType }: BillTypeChange): void {
+    if (this.isSubmitted() || this.billUpdatingId() || participant.type !== 'Guest') return;
+    if ((participant.billType ?? 'Individual') === billType) return;
+    this.billUpdatingId.set(participant.id);
+
+    this.groupOrders
+      .setBillType$(this.groupId(), participant.id, billType)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (sessions) => {
+          this.applySessions(sessions);
+          this.billUpdatingId.set('');
+          this.toast.success(
+            billType === 'Shared'
+              ? `${participant.name}'s dishes are on your bill`
+              : `${participant.name} will pay for their own dishes`,
+          );
+        },
+        error: () => this.billUpdatingId.set(''),
       });
   }
 

@@ -5,6 +5,8 @@ import { SKIP_ERROR_TOAST } from '@app/auth/skip-error-toast.context';
 import { GroupSessionsResponse } from '@app/models/group-orders/group-sessions-response.model';
 import { GroupStatusResponse } from '@app/models/group-orders/group-status.model';
 import { OwnerSessionResponse } from '@app/models/group-orders/owner-session.model';
+import { BillType } from '@app/models/group-orders/participant.model';
+import { SetBillTypeRequest } from '@app/models/group-orders/set-bill-type.model';
 import { SubmitGroupPreOrderRequest, SubmittedDish } from '@app/models/group-orders/submit-group-pre-order.model';
 import { GroupInviteToken, GuestInvite } from '@app/models/reservations/guest-invite.model';
 import { API_BASE_URL } from '@app/shared/config/api-base-url.token';
@@ -61,6 +63,15 @@ export class GroupOrdersService {
   removeSession$(groupReservationId: string, guestSessionId: string): Observable<GroupSessionsResponse> {
     return this.http.delete<GroupSessionsResponse>(
       `${this.baseUrl}/guest/groups/${encodeURIComponent(groupReservationId)}/sessions/${encodeURIComponent(guestSessionId)}`,
+    );
+  }
+
+  /** Owner decides who pays for a guest's dishes; the backend answers with the updated snapshot. */
+  setBillType$(groupReservationId: string, guestSessionId: string, billType: BillType): Observable<GroupSessionsResponse> {
+    const body: SetBillTypeRequest = { billType };
+    return this.http.patch<GroupSessionsResponse>(
+      `${this.baseUrl}/guest/groups/${encodeURIComponent(groupReservationId)}/sessions/${encodeURIComponent(guestSessionId)}/bill-type`,
+      body,
     );
   }
 
