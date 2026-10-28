@@ -1,0 +1,212 @@
+@use 'app/shared/styles/abstracts/colors' as color;
+
+.page {
+  width: min(840px, 100%);
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.page-header {
+  padding-bottom: 12px;
+  border-bottom: 1px solid color.$neutral-200;
+}
+
+.heading-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  h1 {
+    margin: 0;
+    font-size: 28px;
+    line-height: 36px;
+  }
+}
+
+.status-badge {
+  padding: 2px 12px;
+  border-radius: 999px;
+  background: color.$neutral-100;
+  color: color.$neutral-600;
+  font-size: 13px;
+  line-height: 22px;
+
+  &.sent {
+    background: color.$green-100;
+    color: color.$green-800;
+  }
+}
+
+.meta {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 12px 0 0;
+  padding: 0;
+  color: color.$neutral-700;
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+}
+
+.state {
+  margin: 0;
+  padding: 24px;
+  border-radius: 12px;
+  background: color.$neutral-0;
+  color: color.$neutral-600;
+  text-align: center;
+
+  &.error {
+    color: color.$red-400;
+  }
+
+  p {
+    margin: 0 0 12px;
+  }
+}
+
+.notice {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: color.$orange-30;
+  border: 1px solid color.$orange-100;
+  color: color.$neutral-900;
+}
+
+.sync-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-size: 13px;
+  color: color.$neutral-400;
+}
+
+.sync-failed {
+  color: color.$orange-600;
+}
+
+.link-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: color.$green-600;
+  text-decoration: underline;
+
+  &:disabled {
+    color: color.$neutral-400;
+    cursor: default;
+  }
+}
+
+.participants {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.consolidated {
+  background: color.$bg-green;
+  border-radius: 16px;
+  padding: 16px;
+
+  h2 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    line-height: 28px;
+  }
+}
+
+.consolidated-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 0;
+    border-bottom: 1px dashed color.$neutral-200;
+
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+}
+
+.page-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.grand-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0;
+  font-size: 24px;
+  font-weight: 500;
+
+  .amount {
+    color: color.$green-600;
+  }
+}
+
+.btn {
+  border: 0;
+  border-radius: 12px;
+  padding: 14px 20px;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+
+  &.primary {
+    background: color.$green-gradient;
+    color: color.$neutral-0;
+  }
+
+  &.secondary {
+    background: color.$neutral-100;
+    color: color.$neutral-900;
+  }
+
+  &.danger {
+    background: color.$red-400;
+    color: color.$neutral-0;
+  }
+
+  &:disabled {
+    background: color.$neutral-200;
+    color: color.$neutral-400;
+    cursor: not-allowed;
+  }
+}
+
+.submit {
+  width: 100%;
+  font-size: 16px;
+}
+
+.sent-note {
+  margin: 0;
+  color: color.$neutral-600;
+  text-align: center;
+}

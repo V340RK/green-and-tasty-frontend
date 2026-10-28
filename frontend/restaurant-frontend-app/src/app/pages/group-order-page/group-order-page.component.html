@@ -1,0 +1,129 @@
+<main class="page">
+  <header class="page-header">
+    <div class="heading-row">
+      <h1>Group Pre-Order</h1>
+      @if (loadState() === 'ready') {
+        <span class="status-badge" [class.sent]="isSubmitted()">{{ statusLabel() }}</span>
+      }
+    </div>
+
+    @if (invite(); as info) {
+      <ul class="meta">
+        <li><img src="assets/svg/location-green.svg" alt="" width="20" height="20" />{{ info.LocationAddress }}</li>
+        <li><img src="assets/svg/calendar-green.svg" alt="" width="20" height="20" />{{ info.StartTime | date: 'MMM d, y' }}</li>
+        <li>
+          <img src="assets/svg/clock-green.svg" alt="" width="20" height="20" />
+          {{ info.StartTime | date: 'HH:mm' }} - {{ info.EndTime | date: 'HH:mm' }}
+        </li>
+        <li><img src="assets/svg/people-green.svg" alt="" width="20" height="20" />{{ guestsLabel() }}</li>
+      </ul>
+    }
+  </header>
+
+  @switch (loadState()) {
+    @case ('loading') {
+      <p class="state" role="status">Loading group pre-order…</p>
+    }
+    @case ('not-found') {
+      <p class="state error" role="alert">Group reservation not found</p>
+    }
+    @case ('error') {
+      <div class="state error" role="alert">
+        <p>Couldn't load the group pre-order.</p>
+        <button type="button" class="btn secondary" (click)="load()">Try again</button>
+      </div>
+    }
+    @case ('ready') {
+      @if (!isSubmitted() && pendingCount() > 0) {
+        <p class="notice" role="status">
+          {{ pendingCount() }} {{ pendingCount() === 1 ? 'participant hasn’t' : 'participants haven’t' }} submitted their
+          cart yet — their dishes won’t be included in the order
+        </p>
+      }
+
+      <p class="sync-row">
+        @if (refreshFailed()) {
+          <span class="sync-failed">Couldn't refresh. Showing data from {{ updatedAt() | date: 'HH:mm:ss' }}</span>
+        } @else if (updatedAt()) {
+          <span>Updated at {{ updatedAt() | date: 'HH:mm:ss' }}</span>
+        }
+        @if (!isSubmitted()) {
+          <button type="button" class="link-button" [disabled]="refreshing()" (click)="refresh()">Refresh</button>
+        }
+      </p>
+
+      @if (isEmpty()) {
+        <p class="state">Participants haven’t added any dishes yet</p>
+      }
+
+      <ul class="participants">
+        @for (person of participants(); track person.id) {
+          <li>
+            <app-participant-card
+              [participant]="person"
+              [isMe]="person.id === ownerSessionId()"
+              [canRemove]="!isSubmitted()"
+              (removeClick)="askRemove($event)"
+            />
+          </li>
+        }
+      </ul>
+
+      @if (consolidated().items.length) {
+        <section class="consolidated" aria-labelledby="consolidated-title">
+          <h2 id="consolidated-title">Consolidated pre-order</h2>
+          <ul class="consolidated-items">
+            @for (item of consolidated().items; track item.dish.id) {
+              <li>
+                <span>{{ item.dish.name }} × {{ item.quantity }}</span>
+                <span>{{ item.dish.price * item.quantity | currency }}</span>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+
+      <footer class="page-footer">
+        <p class="grand-total"><span>Grand Total</span><span class="amount">{{ grandTotal() | currency }}</span></p>
+        @if (!isSubmitted()) {
+          <button type="button" class="btn primary submit" [disabled]="!canSubmit()" (click)="openSubmitDialog()">
+            Submit Pre-Order
+          </button>
+        } @else {
+          <p class="sent-note">This pre-order has been sent to the restaurant.</p>
+        }
+      </footer>
+    }
+  }
+</main>
+
+@if (submitDialogOpen()) {
+  <app-modal title="Submit group pre-order?" (closed)="closeSubmitDialog()">
+    <p>
+      The restaurant will receive the consolidated order for
+      <strong>{{ grandTotal() | currency }}</strong>. Dishes from participants who haven’t submitted their cart won’t
+      be included.
+    </p>
+    <ng-container modal-actions>
+      <button type="button" class="btn secondary" [disabled]="submitting()" (click)="closeSubmitDialog()">Cancel</button>
+      <button type="button" class="btn primary" [disabled]="submitting()" (click)="confirmSubmit()">
+        {{ submitting() ? 'Submitting…' : 'Submit' }}
+      </button>
+    </ng-container>
+  </app-modal>
+}
+
+@if (removeTarget(); as target) {
+  <app-modal title="Remove guest?" (closed)="cancelRemove()">
+    <p>
+      Are you sure you want to remove <strong>{{ target.name }}</strong> and their pre-order from this reservation?
+      This action cannot be undone.
+    </p>
+    <ng-container modal-actions>
+      <button type="button" class="btn secondary" [disabled]="removing()" (click)="cancelRemove()">Cancel</button>
+      <button type="button" class="btn danger" [disabled]="removing()" (click)="confirmRemove()">
+        {{ removing() ? 'Removing…' : 'Remove Guest' }}
+      </button>
+    </ng-container>
+  </app-modal>
+}
